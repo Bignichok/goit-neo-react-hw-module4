@@ -21,47 +21,57 @@ const App = () => {
 	const [page, setPage] = useState(1);
 	const [isLoading, setIsLoading] = useState(false);
 	const [selectedImage, setSelectedImage] = useState(null);
+	const [totalPages, setTotalPages] = useState(0);
+
+	const handleImageResponse = ({ results, total_pages }) => {
+		if (results.length === 0) {
+			toast.error('Your query does not match results');
+		}
+		setImages(prevImages => [...prevImages, ...results]);
+		setTotalPages(total_pages);
+	};
+
+	const fetchImages = async (searchQuery, currentPage) => {
+		setIsLoading(true);
+		try {
+			const response = await unsplashApi.get('/', {
+				params: {
+					query: searchQuery,
+					page: currentPage,
+					client_id: ACCESS_KEY,
+				},
+			});
+			handleImageResponse(response.data);
+		} catch {
+			toast.error('Failed to fetch images. Please try again later.');
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	useEffect(() => {
 		if (query) {
-			const fetchImages = async () => {
-				setIsLoading(true);
-				try {
-					const response = await unsplashApi.get('/', {
-						params: {
-							query,
-							page,
-							client_id: ACCESS_KEY,
-						},
-					});
-					const newImages = response.data.results;
-					if (!newImages.length) {
-						toast.error('Your query does not match results');
-					}
-					setImages(prevImages => [...prevImages, ...newImages]);
-				} catch {
-					toast.error('Failed to fetch images. Please try again later.');
-				} finally {
-					setIsLoading(false);
-				}
-			};
-
-			fetchImages();
+			fetchImages(query, page);
 		}
-	}, [page, query]);
+	}, [query, page]);
+
+	const resetSearch = newQuery => {
+		setQuery(newQuery);
+		setPage(1);
+		setImages([]);
+		setTotalPages(0);
+	};
 
 	const handleSearchSubmit = searchQuery => {
 		const trimmedQuery = searchQuery.trim();
-		if (trimmedQuery === '') {
+		if (!trimmedQuery) {
 			toast.error('Please enter a search term');
 			return;
 		}
 		if (trimmedQuery === query && page === 1) {
 			return;
 		}
-		setQuery(searchQuery);
-		setPage(1);
-		setImages([]);
+		resetSearch(trimmedQuery);
 	};
 
 	const handleLoadMore = () => {
@@ -82,7 +92,7 @@ const App = () => {
 			<SearchBar onSubmit={handleSearchSubmit} />
 			<ImageGallery images={images} onImageClick={handleImageClick} />
 			{isLoading && <Loader />}
-			{images.length > 0 && !isLoading && (
+			{images.length > 0 && !isLoading && page < totalPages && (
 				<LoadMoreBtn onClick={handleLoadMore} className={styles.loadMoreButton} />
 			)}
 			{selectedImage && <ImageModal imageUrl={selectedImage} onClose={closeModal} />}
