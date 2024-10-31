@@ -1,0 +1,23 @@
+.galleryItem {
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease-in-out;
+}
+
+.galleryItem:hover {
+    transform: scale(1.05);
+}
+
+.image {
+    height: 250px;
+    width: 100%;
+    object-fit: cover;
+    object-position: 50% 50%;
+    cursor: pointer;
+    border-radius: 8px;
+}
